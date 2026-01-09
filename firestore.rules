@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Rules pour les salles de partage d'écran
+    match /rooms/{roomId} {
+      // Tout le monde peut lire les infos de salle
+      allow read: if true;
+
+      // Seuls les utilisateurs authentifiés peuvent créer/modifier
+      // Pour l'instant, on permet tout (à sécuriser plus tard)
+      allow write: if true;
+    }
+
+    // Rules pour les participants
+    match /rooms/{roomId}/participants/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Rules pour les messages de signalisation WebRTC
+    match /signaling/{roomId}/{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}

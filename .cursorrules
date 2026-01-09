@@ -3,8 +3,11 @@
 ## Contexte du Projet
 Application web de partage d'écran et audio en temps réel construite avec:
 - **Frontend**: React 18 + TypeScript + Tailwind CSS
-- **Communication**: WebRTC (P2P) + WebSocket (signalisation)
+- **Build Tool**: Vite
+- **Communication**: WebRTC (P2P) + WebSocket (signalisation via Socket.io)
 - **State Management**: Zustand
+- **Hosting**: Firebase Hosting (pour HTTPS et déploiement)
+- **Backend**: Serveur Node.js séparé pour la signalisation WebRTC
 
 ## Structure du Projet
 ```
@@ -70,12 +73,14 @@ signaling-server/      # Serveur de signalisation WebSocket
 - Optimiser les captures d'écran (frame rate adaptatif)
 - Nettoyer les MediaStream tracks lors du démontage des composants
 - Utiliser `useRef` pour stocker les streams et éviter les re-créations
+- Optimiser le build Vite pour la production (minification, tree-shaking)
 
 ### Sécurité
 - Ne jamais exposer de clés API ou secrets dans le code
 - Valider toutes les entrées utilisateur
 - Utiliser HTTPS/WSS pour les connexions réseau
 - Implémenter l'authentification pour les salons privés
+- Ne pas commit les tokens Firebase ou clés d'API
 
 ### Gestion d'Erreurs
 - Toujours gérer les erreurs avec try/catch pour les opérations async
@@ -88,33 +93,56 @@ signaling-server/      # Serveur de signalisation WebSocket
 - Tester les composants critiques (WebRTC, capture d'écran)
 - Tester avec différentes conditions réseau (lente, instable)
 - Tester sur différents navigateurs (Chrome, Firefox, Safari)
+- Tester sur HTTPS avant le déploiement (Firebase Hosting)
 
 ## Commandes Utiles
 
 ### Développement
-- `npm run dev` - Lancer le serveur de développement Vite (port 3000)
-- `npm run build` - Build de production
-- `npm run preview` - Prévisualiser le build de production
+- `npm run dev` - Lancer le serveur de développement Vite (port 1420 par défaut)
+- `npm run build` - Build de production (génère le dossier `dist/`)
+- `npm run preview` - Prévisualiser le build de production localement
 - `cd signaling-server && npm start` - Lancer le serveur de signalisation (port 3001)
+
+### Déploiement Firebase
+- `firebase login` - Se connecter à Firebase
+- `firebase init` - Initialiser Firebase (sélectionner Hosting uniquement)
+- `firebase deploy --only hosting` - Déployer l'application sur Firebase Hosting
+- `firebase serve` - Tester localement avec Firebase Hosting
 
 ## Fichiers Importants
 
-- `vite.config.ts` - Configuration Vite
-- `tailwind.config.js` - Configuration Tailwind
-- `package.json` - Dépendances Node.js
-- `signaling-server/index.js` - Serveur WebSocket de signalisation
+- `vite.config.ts` - Configuration Vite (port, alias, plugins)
+- `tailwind.config.js` - Configuration Tailwind CSS
+- `package.json` - Dépendances Node.js frontend
+- `signaling-server/package.json` - Dépendances serveur de signalisation
+- `signaling-server/index.js` - Serveur WebSocket de signalisation (Socket.io)
+- `firebase.json` - Configuration Firebase Hosting
+- `.firebaserc` - Projet Firebase sélectionné (ne pas commit)
+- `.env.example` - Template des variables d'environnement
 
 ## Notes Spécifiques au Projet
 
 ### WebRTC
 - Le serveur de signalisation doit être lancé séparément (port 3001)
 - Utilise Socket.io pour la communication en temps réel
+- Serveur de signalisation déployé séparément (VPS, Railway, Render, etc.)
+- Firebase Hosting ne peut pas héberger un serveur WebSocket directement
+
+### Firebase
+- **Hosting** : Utilisé pour héberger le frontend React (HTTPS automatique)
+- **Configuration** : `firebase.json` pointe vers `dist/` (build Vite)
+- **Déploiement** : `firebase deploy --only hosting` après `npm run build`
+- **Important** : Firebase Hosting fournit HTTPS nécessaire pour `getDisplayMedia`
+- Ne pas commit `.firebaserc` ou les fichiers de debug Firebase
+- Utiliser des variables d'environnement pour les URLs de production
 
 ### Capture d'Écran
 - Utilise l'API Web `getDisplayMedia` standard des navigateurs
 - Fonctionne sur Chrome, Firefox, Edge et Safari (avec permissions HTTPS)
 - L'utilisateur sélectionne l'écran/fenêtre à partager via l'interface native du navigateur
-- Nécessite HTTPS en production pour des raisons de sécurité
+- **Nécessite HTTPS en production** : Firebase Hosting fournit HTTPS automatiquement
+- Gérer les erreurs de permissions avec des messages utilisateur-friendly
+- Nettoyer les MediaStream tracks lors de l'arrêt du partage
 
 ### Audio
 - Utiliser Web Audio API pour le traitement audio
@@ -129,16 +157,22 @@ signaling-server/      # Serveur de signalisation WebSocket
 - [ ] Implémenter la qualité adaptative selon la bande passante
 - [ ] Ajouter les statistiques réseau en temps réel
 - [ ] Implémenter l'authentification et les salons privés
-- [ ] Ajouter le support HTTPS pour la production
+- [x] Configurer Firebase Hosting pour HTTPS (fait)
+- [ ] Déployer le serveur de signalisation sur un VPS/service cloud
+- [ ] Configurer les variables d'environnement pour production
+- [ ] Ajouter les tests E2E pour WebRTC
 
 ## Éviter
 
-- ❌ Ne pas commit les fichiers sensibles (.env, clés API)
+- ❌ Ne pas commit les fichiers sensibles (.env, clés API, tokens Firebase)
 - ❌ Ne pas hardcoder les URLs de serveurs (utiliser des variables d'environnement)
 - ❌ Ne pas oublier de nettoyer les ressources (streams, connexions WebRTC)
 - ❌ Ne pas utiliser `any` en TypeScript (utiliser `unknown` si nécessaire)
 - ❌ Ne pas ignorer les erreurs de permissions pour `getDisplayMedia`
 - ❌ Ne pas oublier de tester sur HTTPS avant le déploiement
+- ❌ Ne pas commit `.firebaserc` ou les fichiers de debug Firebase
+- ❌ Ne pas déployer sans avoir testé le build local (`npm run build`)
+- ❌ Ne pas oublier de configurer les variables d'environnement en production
 
 ## Ressources
 
@@ -146,3 +180,6 @@ signaling-server/      # Serveur de signalisation WebSocket
 - Documentation React: https://react.dev/
 - Documentation Zustand: https://zustand-demo.pmnd.rs/
 - MDN getDisplayMedia: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia
+- Firebase Hosting: https://firebase.google.com/docs/hosting
+- Socket.io: https://socket.io/docs/v4/
+- Vite: https://vitejs.dev/
