@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.gitignore
+*.log
+npm-debug.log*
+.DS_Store
+.env
+.env.local
+.vscode
+.idea
+coverage
+*.md
+src-tauri
+scripts
+pkgconfig
+.cursorrules

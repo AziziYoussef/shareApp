@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Serveur de signalisation WebSocket
+  signaling-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.signaling
+    container_name: screen-share-signaling
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - screen-share-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend React
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: screen-share-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - signaling-server
+    restart: unless-stopped
+    networks:
+      - screen-share-network
+    environment:
+      - VITE_SIGNALING_SERVER_URL=http://localhost:3001
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  screen-share-network:
+    driver: bridge
